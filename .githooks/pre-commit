@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Aktivieren:  git config core.hooksPath .githooks
+exec "$(dirname "$0")/../scripts/ip-guard.sh"

@@ -1,0 +1,41 @@
+# ============ Gradle / Build (alle Module) ============
+*.iml
+.gradle/
+build/
+.kotlin/
+.cxx/
+.externalNativeBuild/
+captures/
+local.properties
+
+# ============ Android-Artefakte ============
+*.apk
+*.aar
+*.aab
+*.ap_
+*.dex
+*.class
+output-metadata.json
+
+# ============ IDE ============
+.idea/
+.DS_Store
+
+# ============ Logs ============
+*.log
+
+# ================= IP-ZONE — NIEMALS committen (IP-2) =================
+# Gesamte ALE-/Whitebox-Zone
+/data/source-ale/
+# native Bibliotheken & Whitebox
+**/*.so
+**/libb11bb8*
+**/libgo_bridge*
+**/libg87d19*
+# statische Krypto-Blobs / Schlüsselmaterial / Vektoren
+**/cdfe*.bin
+**/*keys*.bin
+ghost_aes_key*
+# Signatur-/Keystore-Material
+**/*.keystore
+**/*.jks
