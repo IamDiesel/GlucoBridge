@@ -52,11 +52,31 @@ Zone liegen (bewusst **nicht** Teil des Repos):
 | `libc++_shared.so` | Laufzeit-Abhängigkeit von `libb11bb8.so` | `data/source-ale/src/main/jniLibs/arm64-v8a/` |
 | `cdfe1.bin` | statischer, exportierter Blob (Quellmaterial „data1") | `data/source-ale/src/main/assets/ale/` |
 | `cdfe2.bin` | statischer, exportierter Blob (Quellmaterial „data2") | `data/source-ale/src/main/assets/ale/` |
+| `glucoale.c` | JNI-Glue zur White-Box (build-spezifische **Offsets**, Key-Ladder, kp-Parser). Als Vorlage liegt `docs/ale/glucoale_dummy.c` im Repo – **nach `glucoale.c` umbenennen/kopieren** und die selbst ermittelten Werte eintragen. | `data/source-ale/src/main/cpp/` |
 
-Dazu gehört die (ebenfalls git-ignorierte) JNI-Glue mit den **build-spezifischen Offsets** unter
-`data/source-ale/src/main/cpp/`. Diese Artefakte sind an eine App-/Bibliotheksversion gebunden und
-müssen nach einem brechenden Update für die **eigene** Installation erneuert werden.
-*Es wird bewusst keine Anleitung zur Beschaffung/Erzeugung dieser Artefakte bereitgestellt.*
+Alle genannten Artefakte sind an eine App-/Bibliotheksversion gebunden und müssen nach einem
+brechenden Update für die **eigene** Installation erneut ermittelt und eingetragen werden.
+*Es wird bewusst keine Anleitung zur Beschaffung/Erzeugung dieser Artefakte bereitgestellt –
+weder hier noch im Forschungsbericht.*
+
+### Vorlage `docs/ale/glucoale_dummy.c`
+
+Im Repo liegt nur eine **strukturerhaltende Dummy-Fassung** der JNI-Glue. Sie zeigt den Aufbau
+der ALE-Anbindung, enthält aber **keinerlei reale Werte oder Algorithmen** und liefert nur
+Fehlschläge (die App fällt dann auf REST zurück). Für den eigenen ALE-Betrieb die Datei nach
+`data/source-ale/src/main/cpp/glucoale.c` kopieren/umbenennen und die mit `[DUMMY]` bzw.
+`[DUMMY-STUB]` markierten Stellen selbst füllen. Als **Dummy** hinterlegt sind:
+
+- **VMA-Offsets** (`OFF_*`) – Platzhalter `0x000000`
+- **Erfolgs-Returncode** (`SKB_OK`) – Platzhalter
+- **Key-Ladder-Parameter** (`U1_K*`, `U2_K*`) – Platzhalter `0`
+- **Name des exportierten White-Box-Symbols** – Platzhalter-String
+- **ABI-Signaturen der White-Box-Funktionen** – auf generische Zeiger neutralisiert
+- **kp-Bündel-Parser** (Formatlogik) – als Stub entfernt
+- **Provisioning-Ablauf** (Key-Ladder-Sequenz) – als Stub entfernt
+
+Die native Bibliothek (`*.so`) und die statischen Blobs (`cdfe1/cdfe2`) sind ohnehin nicht Teil
+des Repos (siehe Tabelle oben).
 
 ## IP-Trennung
 

@@ -1,11 +1,21 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <!-- Würfel (flach, moderne 3D-Schattierung) -->
-    <path android:fillColor="#FFFFFFFF" android:pathData="M54,23 L82,40 L54,57 L26,40 Z" />
-    <path android:fillColor="#FFCFCFCF" android:pathData="M26,40 L54,57 L54,86 L26,69 Z" />
-    <path android:fillColor="#FFA6A6A6" android:pathData="M82,40 L54,57 L54,86 L82,69 Z" />
-    <!-- roter Tropfen, innerhalb des Würfels -->
+    <!-- Tropfen zuerst -> liegt IN der Box -->
     <path android:fillColor="#FFE53935"
-        android:pathData="M54,46 C49,55 45,60 45,64 A9,9 0 1 0 63,64 C63,60 59,55 54,46 Z" />
+        android:pathData="M54,44 C48,54 44,58 44,60 A10,10 0 1 0 64,60 C64,58 60,54 54,44 Z" />
+    <!-- durchscheinende Flächen -->
+    <path android:fillColor="#78FFFFFF" android:pathData="M54,23 L82,40 L54,57 L26,40 Z" />
+    <path android:fillColor="#66CFCFCF" android:pathData="M26,40 L54,57 L54,86 L26,69 Z" />
+    <path android:fillColor="#66A6A6A6" android:pathData="M82,40 L54,57 L54,86 L82,69 Z" />
+    <!-- verdeckte hintere Kanten (durch die Transparenz sichtbar), feiner + halbtransparent -->
+    <path android:strokeColor="#59FFFFFF" android:strokeWidth="1.6" android:fillColor="#00000000"
+        android:pathData="M54,23 L54,52 M54,52 L26,69 M54,52 L82,69" />
+    <!-- vordere/sichtbare Kanten, opak -->
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:pathData="M54,23 L82,40 L54,57 L26,40 Z" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:pathData="M26,40 L54,57 L54,86 L26,69 Z" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2.5" android:fillColor="#00000000"
+        android:pathData="M82,40 L54,57 L54,86 L82,69 Z" />
 </vector>
