@@ -1,105 +1,73 @@
 # GlucoBridge
 
-Schlanke, architektonisch saubere Android-App (Kotlin/Jetpack Compose), die den **eigenen**
-Glukosewert anzeigt und an eine **Pixel Watch** weiterreicht.
+Schlanke **Android- & Wear-OS-App**, die den **eigenen** Glukosewert anzeigt und auf die Pixel Watch bringt.
 
-> **Reines Forschungs- und Lernprojekt** zu Interoperabilität, Protokollen und Kryptographie.
-> **Kein Produkt, kein Medizinprodukt.** Weder dieses Repository noch der begleitende
-> Forschungsbericht enthalten eine Anleitung zur Nachbildung herstellerspezifischer Komponenten.
+> Forschungs- & Lernprojekt zu Interoperabilität und Kryptographie. **Kein Medizinprodukt.**
+> Nutzung nur mit **eigenen** Daten. Weder dieses Repo noch der Forschungsbericht liefern eine
+> Anleitung zur Nachbildung herstellerspezifischer Komponenten.
 
----
+## Motivation
 
-## Motivation: persönliche Interoperabilität
+Der eigene Glukosewert ist heute über eine **offene REST-/Follower-API** abrufbar (von vielen Apps
+und öffentlichen Repos genutzt) — die aber jederzeit eingeschränkt oder abgeschaltet werden kann.
+Damit der Zugriff auf die **eigenen** Werte erhalten bleibt, nutzt GlucoBridge zusätzlich die
+**verschlüsselte App-Schnittstelle (ALE)** als robusten Standardpfad.
 
-Der eigene Glukosewert lässt sich heute über eine **offene, community-dokumentierte REST-/
-Follower-Schnittstelle** abrufen — genutzt von zahlreichen Drittanwendungen und öffentlichen
-GitHub-Projekten. Diese offene Schnittstelle kann jedoch jederzeit **eingeschränkt oder
-abgeschaltet** werden.
+Als reiner **Cloud-Follower** greift die App **weder den Sensor noch die Original-App** an — der
+klinische LibreLinkUp-/LibreView-Fluss (z. B. für die behandelnde Ärztin/den Arzt) bleibt intakt.
+Genau diese Lücke — Interoperabilität **ohne** Entkopplung von der offiziellen App — schließt das Projekt.
 
-Damit der Zugriff auf die **eigenen** Werte erhalten bleibt, untersucht dieses Projekt zusätzlich
-die **aktuelle, verschlüsselte App-Schnittstelle (ALE)** und nutzt sie als **Rückfall- bzw.
-Standardpfad** für die persönliche Interoperabilität. Zielsetzung ist damit zweigeteilt:
+## Hinweise (bitte lesen)
 
-- **Persönliche Interoperabilität** — dauerhafter, eigenständiger Zugriff auf die **eigenen** Daten,
-  robust gegen eine Abschaltung der offenen API.
-- **Globaler Forschungszweck** — Wissensaufbau und -vermittlung zu Protokoll- und
-  Kryptographie-Interoperabilität.
-
----
-
-## Zweck & Rahmen (bitte lesen)
-
-- **Reine Forschung & Wissensvermittlung.** Es geht um das Verstehen und Dokumentieren von
-  Interoperabilität — nicht um ein einsatzfertiges Werkzeug für Dritte.
-- **Keine Anleitung / keine Reproduktion.** Weder in diesem Repository noch im öffentlichen
-  Forschungsbericht wird eine Schritt-für-Schritt-Anleitung, ein Rezept oder ausführbarer Code
-  zur **Nachbildung** der herstellerspezifischen (verschlüsselten) Komponenten bereitgestellt.
-  Die dafür nötige Zone ist bewusst **nicht Teil** dieses Repos (siehe *IP-Trennung*).
-- **Nur eigene Daten.** Nutzung ausschließlich mit **eigenen** Zugangsdaten und dem **eigenen**
-  Konto (bzw. mit ausdrücklicher Zustimmung der betroffenen Person).
-
----
-
-## ⚠️ Disclaimer
-
-- **Kein Medizinprodukt.** Nicht für Diagnose, Therapie oder Dosierungsentscheidungen. Triff
-  **keine** medizinischen Entscheidungen auf Basis dieser App; es gilt stets das offizielle
-  Messsystem und ärztlicher Rat.
-- **Datenschutz.** Zugangsdaten, Token und Glukosewerte bleiben **lokal auf dem Gerät** (Session
-  verschlüsselt via Android Keystore). **Kein** Upload an Dritte. Logs enthalten bewusst **kein**
-  Passwort und **keinen** Token.
-- **Keine herstellerspezifischen Artefakte im Repo.** Native Bibliotheken, statische Krypto-Blobs,
-  Offsets, Schlüssel- und Signaturmaterial sind **nicht** enthalten und werden **nicht** verteilt.
-- **Marken.** „LibreLinkUp", „Libre", „Abbott", „Pixel", „Wear OS" u. a. gehören ihren jeweiligen
-  Inhabern. Dieses Projekt steht in **keiner** Verbindung zu diesen Unternehmen und wird von ihnen
-  weder unterstützt noch gebilligt.
-- **Rechtsrahmen.** Interoperabilität mit den **eigenen** Daten. Örtliche Rechtslage und die
-  jeweiligen Nutzungsbedingungen bitte eigenverantwortlich beachten.
-- **Ohne Gewähr.** Bereitstellung „wie besehen" (as-is), Nutzung auf eigenes Risiko, keine Haftung.
-
----
+- **Kein Medizinprodukt** — nicht für Diagnose, Therapie oder Dosierung. Maßgeblich sind das
+  offizielle Messsystem und ärztlicher Rat.
+- **Nur eigene Daten / eigenes Konto.** Alles bleibt **lokal** (Session Keystore-verschlüsselt,
+  kein Upload; keine Passwörter/Token in Logs).
+- **Keine herstellerspezifischen Artefakte im Repo** (git-ignoriert), **keine** Reproduktions-Anleitung.
+- **Marken** gehören ihren Inhabern; keine Verbindung/Billigung. Nutzung „wie besehen" (as-is), auf eigenes Risiko.
 
 ## Funktionen
 
-- **Login** mit eigenen Zugangsdaten; Session verschlüsselt & persistent.
-- **Aktueller Wert** mit Trendpfeil, Zielbereichs-Färbung, Alter.
-- **Interaktiver Verlaufsgraph** (Cursor, horizontales Verschieben, Zoom, Grid, Achsen, Zielband).
-- **Persistenter Verlauf** (Room).
-- **Einstellungen**: Pollingintervall, Zielbereich, Einheit (mg/dL ⇄ mmol/L), Datenquelle.
-- **Hintergrund-Betrieb**: Foreground-Service mit dauerhafter Benachrichtigung.
-- **Pixel Watch**: App-Screen, **Tile** (Kachel) und **Complication** (Zifferblatt).
-
----
+- Login (verschlüsselt & persistent), aktueller Wert + Trendpfeil + Zonenfarbe + Alter.
+- Interaktiver Verlaufsgraph (Cursor, Verschieben, Zoom, Grid, Zielband); persistenter Verlauf (Room).
+- Einstellungen: Pollingintervall, Zielbereich, Einheit (mg/dL ⇄ mmol/L), Datenquelle.
+- Hintergrund-Service mit dauerhafter Benachrichtigung.
+- Pixel Watch: App-Screen, Tile (Kachel), Complication (Zifferblatt) — via Wearable Data Layer.
 
 ## Datenquellen
 
-- **REST (offen/community):** die dokumentierte Follower-Schnittstelle — funktioniert heute, ist
-  aber potenziell von einer Abschaltung betroffen.
-- **ALE (verschlüsselte App-Schnittstelle):** Standardpfad für die persönliche Interoperabilität;
-  robuster gegen eine Abschaltung der offenen API. Die zugehörige Implementierung liegt in einer
-  **git-ignorierten Zone** und ist **nicht Teil dieses Repos**.
+- **REST (offen/community):** funktioniert heute, potenziell abschaltbar.
+- **ALE (verschlüsselt):** robuster Standardpfad; Implementierung in der **git-ignorierten** Zone
+  `:data:source-ale` (nicht im Repo). Der Build ist **absent-safe** → ohne die Zone läuft die App
+  über REST. Die Quelle ist in den Einstellungen wählbar.
 
-Der Build ist **absent-safe**: Fehlt die git-ignorierte Zone, läuft die App über den offenen
-REST-Pfad; die Quelle ist in den Einstellungen wählbar.
+## ALE-Zone: lokal bereitzustellende Dateien
 
----
+Für den ALE-Betrieb müssen folgende herstellerspezifische Artefakte lokal in der git-ignorierten
+Zone liegen (bewusst **nicht** Teil des Repos):
+
+| Datei | Beschreibung | Ablageort in der App |
+|---|---|---|
+| `libb11bb8.so` | native White-Box-Krypto-Bibliothek (arm64-v8a) | `data/source-ale/src/main/jniLibs/arm64-v8a/` |
+| `libc++_shared.so` | Laufzeit-Abhängigkeit von `libb11bb8.so` | `data/source-ale/src/main/jniLibs/arm64-v8a/` |
+| `cdfe1.bin` | statischer, exportierter Blob (Quellmaterial „data1") | `data/source-ale/src/main/assets/ale/` |
+| `cdfe2.bin` | statischer, exportierter Blob (Quellmaterial „data2") | `data/source-ale/src/main/assets/ale/` |
+
+Dazu gehört die (ebenfalls git-ignorierte) JNI-Glue mit den **build-spezifischen Offsets** unter
+`data/source-ale/src/main/cpp/`. Diese Artefakte sind an eine App-/Bibliotheksversion gebunden und
+müssen nach einem brechenden Update für die **eigene** Installation erneuert werden.
+*Es wird bewusst keine Anleitung zur Beschaffung/Erzeugung dieser Artefakte bereitgestellt.*
 
 ## IP-Trennung
 
-Die stabile Schnittstelle (`:core:glucose-api`) enthält **kein** herstellerspezifisches Wissen.
-Herstellerspezifische Komponenten sind konsequent aus der Versionsverwaltung ausgeschlossen:
-
-- `.gitignore` deckt die gesamte IP-Zone ab (Modul, native Bibliotheken, Krypto-Blobs, Schlüssel).
-- Ein **Pre-Commit-Guard** (`scripts/ip-guard.sh`) bricht Commits ab, sobald ein verbotener Pfad
-  oder verdächtiger Inhalt erkannt wird. Aktivierung:
+Die stabile SPI (`:core:glucose-api`) ist IP-frei. Schutz: `.gitignore` deckt die IP-Zone ab; ein
+Pre-Commit-Guard bricht bei verbotenen Pfaden/Inhalten ab. Aktivierung:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
----
-
-## Architektur (Kurzüberblick)
+## Architektur
 
 Multi-Modul, Clean Architecture / MVVM, manuelle Constructor-DI, Coroutines/Flow.
 
@@ -114,32 +82,20 @@ Multi-Modul, Clean Architecture / MVVM, manuelle Constructor-DI, Coroutines/Flow
 :data:source-ale  (git-ignoriert) — NICHT im Repo
 ```
 
----
-
 ## Build & Ausführung
 
 - **Android Studio** (aktuell), JDK 11, Android SDK (compileSdk 37), minSdk 26 (App) / 30 (Wear).
-- Ohne die git-ignorierte Zone baut die App ohne NDK über REST.
+- Ohne die git-ignorierte ALE-Zone baut die App ohne NDK über REST.
 - **Handy:** Run-Konfiguration `app`. **Uhr:** Run-Konfiguration `wear` (gekoppelte/WLAN-Debug-Uhr).
 
----
+## Forschungsbericht
 
-## Forschungsbericht (öffentlich)
+Öffentlich, in einem **separaten Repository** geführt — bewusste Trennung von Code und Bericht;
+ebenfalls ohne Anleitungscharakter.
 
-Die App ist der praktische Teil eines größeren Forschungs- und Lernprojekts. Der begleitende
-**öffentliche Forschungsbericht** beschreibt Vorgehen und Erkenntnisse (Interoperabilität,
-Protokoll, Kryptographie, App-Architektur) zu **Bildungs- und Forschungszwecken**.
-
-Auch der Bericht verfolgt ausdrücklich **keinen Anleitungscharakter**: Er stellt **keine**
-Schritt-für-Schritt-Reproduktion und **kein** herstellerspezifisches Material bereit, sondern
-dient dem Wissensaufbau und der Wissensvermittlung. Die öffentliche Fassung wird bewusst in einem **separaten öffentlichen Repository** geführt — **Code und Bericht sind absichtlich getrennt**.
-
-> 🔗 **Forschungsbericht:** wird bewusst in einem **separaten öffentlichen Repository** geführt — _Link hier eintragen_
-
----
+> 🔗 **Forschungsbericht:** _Link hier eintragen_
 
 ## Lizenz / rechtlicher Rahmen
 
-Persönliches Forschungs- und Lernprojekt. Keine Weitergabe herstellerspezifischer Artefakte.
-Nutzung auf eigene Verantwortung im Rahmen der geltenden Rechtslage und der jeweiligen
-Nutzungsbedingungen.
+Persönliches Forschungs- & Lernprojekt. Keine Weitergabe herstellerspezifischer Artefakte. Nutzung
+im Rahmen der geltenden Rechtslage und der jeweiligen Nutzungsbedingungen.
