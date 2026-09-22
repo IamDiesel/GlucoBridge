@@ -113,7 +113,7 @@ Multi-Modul, Clean Architecture / MVVM, manuelle Constructor-DI, Coroutines/Flow
 Öffentlich, in einem **separaten Repository** geführt — bewusste Trennung von Code und Bericht;
 ebenfalls ohne Anleitungscharakter.
 
-> 🔗 **Forschungsbericht:** _Link hier eintragen_
+> 🔗 **Forschungsbericht:** [GitHub](https://github.com/IamDiesel/librelinkup-ale-writeup.git)
 
 ## Lizenz / rechtlicher Rahmen
 
