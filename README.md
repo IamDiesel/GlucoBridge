@@ -30,9 +30,14 @@ Genau diese Lücke — Interoperabilität **ohne** Entkopplung von der offiziell
 
 - Login (verschlüsselt & persistent), aktueller Wert + Trendpfeil + Zonenfarbe + Alter.
 - Interaktiver Verlaufsgraph (Cursor, Verschieben, Zoom, Grid, Zielband); persistenter Verlauf (Room).
-- Einstellungen: Pollingintervall, Zielbereich, Einheit (mg/dL ⇄ mmol/L), Datenquelle.
+- Einstellungen: Pollingintervall, Zielbereich, Einheit (mg/dL ⇄ mmol/L), Datenquelle,
+  eigener Export-Tab (siehe „Export & Interoperabilität").
 - Hintergrund-Service mit dauerhafter Benachrichtigung.
-- Pixel Watch: App-Screen, Tile (Kachel), Complication (Zifferblatt) — via Wearable Data Layer.
+- Pixel Watch: App-Screen mit Verlaufs-Sparkline (Cursor-Auswahl) und vergrößertem Graph,
+  Tile (Kachel), Complication (Zifferblatt) — via Wearable Data Layer;
+  Tile & Complication öffnen beim Antippen die Watch-App.
+- Export der eigenen Werte: CSV, FHIR-JSON, Nightscout (Datei + Upload) und
+  Health Connect (Google Health) — pro Ziel opt-in.
 
 ## Datenquellen
 
@@ -40,6 +45,21 @@ Genau diese Lücke — Interoperabilität **ohne** Entkopplung von der offiziell
 - **ALE (verschlüsselt):** robuster Standardpfad; Implementierung in der **git-ignorierten** Zone
   `:data:source-ale` (nicht im Repo). Der Build ist **absent-safe** → ohne die Zone läuft die App
   über REST. Die Quelle ist in den Einstellungen wählbar.
+
+## Export & Interoperabilität
+
+Optionaler Export der eigenen Werte an weitere Ziele — je Ziel in einem eigenen
+Einstellungen-Tab an-/abschaltbar, opt-in und lokal ausgelöst.
+
+- **Health Connect (Google Health):** schreibt `BloodGlucoseRecord` automatisch im Poll-Takt
+  (`specimenSource = interstitial fluid`, lokaler `zoneOffset` für sauberes Tages-Bucketing).
+  Andere Health-Connect-Apps können die Werte danach lesen. Ersetzt den offiziellen
+  LibreLinkUp-/LibreView-Fluss nicht.
+- **Nightscout:** Datei-Export und Upload (automatisch + „Zeitraum jetzt hochladen").
+- **CSV:** Datei-Export für Tabellen/Auswertung.
+- **FHIR-JSON:** Datei-Export im FHIR-Format für Interop mit Gesundheits-Ökosystemen.
+
+Alle Exporte betreffen ausschließlich die eigenen Daten und bleiben unter eigener Kontrolle.
 
 ## ALE-Zone: lokal bereitzustellende Dateien
 
@@ -92,7 +112,7 @@ git config core.hooksPath .githooks
 Multi-Modul, Clean Architecture / MVVM, manuelle Constructor-DI, Coroutines/Flow.
 
 ```
-:app              App (UI/Compose, DI, Room, verschl. Session, Wear-Push, Service)
+:app              App (UI/Compose, DI, Room, verschl. Session, Wear-Push, Service, Export/Health-Connect)
 :wear             Wear-OS-App (Compose, Tile, Complication, Data-Layer-Empfang)
 :core:model       Domänenmodelle
 :core:glucose-api SPI: GlucoseSource (stabile, IP-freie Grenze)
