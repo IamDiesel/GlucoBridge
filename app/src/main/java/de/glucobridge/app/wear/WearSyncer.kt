@@ -22,7 +22,10 @@ class WearSyncer(
     init {
         scope.launch {
             combine(repo.state, repo.settings) { st, se -> st to se }.collect { (st, se) ->
-                val r = (st as? GlucoseState.Content)?.reading ?: return@collect
+                val content = st as? GlucoseState.Content ?: return@collect
+                val r = content.reading
+                // Kompaktes Verlaufsfenster fuer die Uhr (chronologisch, gedeckelt -> kleine Payload).
+                val hist = content.history.sortedBy { it.timestampEpochMillis }.takeLast(240)
                 runCatching {
                     val req = PutDataMapRequest.create(PATH).apply {
                         dataMap.putInt("value", r.valueMgDl)
@@ -31,6 +34,8 @@ class WearSyncer(
                         dataMap.putInt("targetLow", se.target.lowMgDl)
                         dataMap.putInt("targetHigh", se.target.highMgDl)
                         dataMap.putString("unit", se.unit.name)
+                        dataMap.putLongArray("histTs", LongArray(hist.size) { hist[it].timestampEpochMillis })
+                        dataMap.putLongArray("histVal", LongArray(hist.size) { hist[it].valueMgDl.toLong() })
                     }.asPutDataRequest().setUrgent()
                     dataClient.putDataItem(req)
                 }

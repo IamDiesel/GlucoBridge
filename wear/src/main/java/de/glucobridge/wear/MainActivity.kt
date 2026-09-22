@@ -16,6 +16,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
+import android.content.ComponentName
+import androidx.wear.tiles.TileService
+import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
+import de.glucobridge.wear.tile.GlucoseTileService
+import de.glucobridge.wear.complication.GlucoseComplicationService
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
@@ -35,7 +46,8 @@ private const val PATH = "/glucose"
 
 class GlucoseData(
     val value: Int, val trend: String, val ts: Long,
-    val targetLow: Int, val targetHigh: Int, val unit: String
+    val targetLow: Int, val targetHigh: Int, val unit: String,
+    val histTs: LongArray = LongArray(0), val histVal: IntArray = IntArray(0)
 )
 
 class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
@@ -53,7 +65,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         dc.addListener(this)
         dc.dataItems.addOnSuccessListener { buffer ->
             for (item in buffer) {
-                if (item.uri.path == PATH) glucose = parse(DataMapItem.fromDataItem(item).dataMap)
+                if (item.uri.path == PATH) onData(DataMapItem.fromDataItem(item).dataMap)
             }
             buffer.release()
         }
@@ -67,8 +79,21 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     override fun onDataChanged(events: DataEventBuffer) {
         for (e in events) {
             if (e.type == DataEvent.TYPE_CHANGED && e.dataItem.uri.path == PATH) {
-                glucose = parse(DataMapItem.fromDataItem(e.dataItem).dataMap)
+                onData(DataMapItem.fromDataItem(e.dataItem).dataMap)
             }
+        }
+    }
+
+    private fun onData(m: DataMap) {
+        val g = parse(m)
+        glucose = g
+        // Cache immer frisch halten (Tile/Complication lesen daraus) + Refresh anstossen.
+        runCatching { GlucoseStore(this).save(g.value, g.trend, g.ts, g.targetLow, g.targetHigh, g.unit) }
+        runCatching { TileService.getUpdater(this).requestUpdate(GlucoseTileService::class.java) }
+        runCatching {
+            ComplicationDataSourceUpdateRequester
+                .create(this, ComponentName(this, GlucoseComplicationService::class.java))
+                .requestUpdateAll()
         }
     }
 
@@ -78,7 +103,9 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         ts = m.getLong("ts"),
         targetLow = m.getInt("targetLow", 70),
         targetHigh = m.getInt("targetHigh", 180),
-        unit = m.getString("unit") ?: "MG_DL"
+        unit = m.getString("unit") ?: "MG_DL",
+        histTs = m.getLongArray("histTs") ?: LongArray(0),
+        histVal = m.getLongArray("histVal")?.let { a -> IntArray(a.size) { a[it].toInt() } } ?: IntArray(0)
     )
 }
 
@@ -94,24 +121,62 @@ private fun WearApp(data: GlucoseData?) {
                     Text("Warte auf Daten…", color = Color.White, fontSize = 15.sp)
                 } else {
                     val zone = TargetRange(data.targetLow, data.targetHigh).zoneFor(data.value)
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    val hasHistory = data.histVal.size >= 2
+                    var cursorIndex by remember(data) { mutableStateOf<Int?>(null) }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    ) {
                         Text(
                             text = "${formatVal(data.value, data.unit)} ${arrow(data.trend)}",
                             color = zoneColor(zone),
-                            fontSize = 44.sp,
+                            fontSize = if (hasHistory) 38.sp else 44.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "${unitLabel(data.unit)} · ${age(data.ts)}",
                             color = Color.White,
-                            fontSize = 14.sp
+                            fontSize = 13.sp
                         )
+                        if (hasHistory) {
+                            Spacer(Modifier.height(6.dp))
+                            GlucoseSparkline(
+                                values = data.histVal,
+                                targetLow = data.targetLow,
+                                targetHigh = data.targetHigh,
+                                lineColor = zoneColor(zone),
+                                cursorIndex = cursorIndex,
+                                onCursor = { cursorIndex = it },
+                                modifier = Modifier.fillMaxWidth().height(72.dp)
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            val ci = cursorIndex
+                            if (ci != null && ci in data.histVal.indices) {
+                                Text(
+                                    text = "${hhmm(data.histTs.getOrElse(ci) { 0L })} · " +
+                                        formatVal(data.histVal[ci], data.unit),
+                                    color = Color.White,
+                                    fontSize = 13.sp
+                                )
+                            } else {
+                                Text(
+                                    text = "↓${formatVal(data.histVal.min(), data.unit)}  " +
+                                        "↑${formatVal(data.histVal.max(), data.unit)}  " +
+                                        "Ø${formatVal(data.histVal.average().toInt(), data.unit)}",
+                                    color = Color(0xFFBDBDBD),
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
+
+private fun hhmm(ts: Long): String =
+    if (ts <= 0L) "" else java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(ts))
 
 private fun formatVal(mgdl: Int, unit: String): String =
     if (unit == GlucoseUnit.MMOL_L.name) String.format("%.1f", mgdl / 18.0182) else mgdl.toString()

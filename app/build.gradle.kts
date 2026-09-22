@@ -57,6 +57,10 @@ dependencies {
     // --- Sicherheit (verschluesselte Session) ---
     implementation(libs.androidx.security.crypto)
 
+    // --- Export: Health Connect + HTTP (Nightscout) ---
+    implementation(libs.androidx.health.connect)
+    implementation(libs.okhttp)
+
     // --- Persistenz: Verlauf (Room, KSP) ---
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)

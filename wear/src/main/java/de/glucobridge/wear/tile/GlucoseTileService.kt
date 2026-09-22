@@ -3,7 +3,9 @@ package de.glucobridge.wear.tile
 import androidx.concurrent.futures.ResolvableFuture
 import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.DimensionBuilders
+import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.LayoutElementBuilders
+import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.TimelineBuilders
 import androidx.wear.protolayout.material.Text
@@ -51,11 +53,26 @@ class GlucoseTileService : TileService() {
             )
             .build()
 
+        val openApp = ModifiersBuilders.Clickable.Builder()
+            .setId("open_app")
+            .setOnClick(
+                ActionBuilders.LaunchAction.Builder()
+                    .setAndroidActivity(
+                        ActionBuilders.AndroidActivity.Builder()
+                            .setPackageName(packageName)
+                            .setClassName("de.glucobridge.wear.MainActivity")
+                            .build()
+                    ).build()
+            ).build()
+
         val root = LayoutElementBuilders.Box.Builder()
             .setWidth(DimensionBuilders.expand())
             .setHeight(DimensionBuilders.expand())
             .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
             .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+            .setModifiers(
+                ModifiersBuilders.Modifiers.Builder().setClickable(openApp).build()
+            )
             .addContent(column)
             .build()
 
