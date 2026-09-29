@@ -48,10 +48,10 @@
                 android:resource="@drawable/ic_launcher" />
         </service>
 
-        <!-- Complication (Zifferblatt) -->
+        <!-- Complications (Zifferblatt): 4 Varianten -->
         <service
-            android:name=".complication.GlucoseComplicationService"
-            android:label="@string/complication_label"
+            android:name=".complication.ValueComplicationService"
+            android:label="Glukose: Wert"
             android:icon="@drawable/ic_launcher"
             android:exported="true"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
@@ -65,5 +65,61 @@
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="0" />
         </service>
+        <service
+            android:name=".complication.AgeComplicationService"
+            android:label="Glukose: Alter"
+            android:icon="@drawable/ic_launcher"
+            android:exported="true"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
+            </intent-filter>
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="SHORT_TEXT" />
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="0" />
+        </service>
+        <service
+            android:name=".complication.ValueAgeComplicationService"
+            android:label="Glukose: Wert + Alter"
+            android:icon="@drawable/ic_launcher"
+            android:exported="true"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
+            </intent-filter>
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="SHORT_TEXT" />
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="0" />
+        </service>
+        <service
+            android:name=".complication.AgeValueComplicationService"
+            android:label="Glukose: Alter + Wert"
+            android:icon="@drawable/ic_launcher"
+            android:exported="true"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
+            </intent-filter>
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="SHORT_TEXT" />
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="0" />
+        </service>
+        <!-- Unsichtbare Aktivitaet fuer Complication-Tap (Aktualisieren, ohne App zu oeffnen) -->
+        <activity
+            android:name=".RefreshActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
     </application>
 </manifest>

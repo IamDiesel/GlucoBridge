@@ -5,6 +5,7 @@ import de.glucobridge.core.model.GlucoseUnit
 import de.glucobridge.core.model.TargetRange
 import de.glucobridge.domain.DataSourceMode
 import de.glucobridge.domain.Settings
+import de.glucobridge.domain.WearMode
 import de.glucobridge.domain.SettingsStore
 
 /** Einfache, nicht-sensible Einstellungen in SharedPreferences (FR-P). */
@@ -23,7 +24,8 @@ class SharedPrefsSettingsStore(context: Context) : SettingsStore {
             unit = runCatching { GlucoseUnit.valueOf(prefs.getString(K_UNIT, d.unit.name)!!) }.getOrDefault(d.unit),
             dataSource = runCatching { DataSourceMode.valueOf(prefs.getString(K_SRC, d.dataSource.name)!!) }.getOrDefault(d.dataSource),
             staleThresholdMin = prefs.getInt(K_STALE, d.staleThresholdMin),
-            backgroundEnabled = prefs.getBoolean(K_BG, d.backgroundEnabled)
+            backgroundEnabled = prefs.getBoolean(K_BG, d.backgroundEnabled),
+            wearMode = runCatching { WearMode.valueOf(prefs.getString(K_WEAR, d.wearMode.name)!!) }.getOrDefault(d.wearMode)
         )
     }
 
@@ -36,6 +38,7 @@ class SharedPrefsSettingsStore(context: Context) : SettingsStore {
             .putString(K_SRC, settings.dataSource.name)
             .putInt(K_STALE, settings.staleThresholdMin)
             .putBoolean(K_BG, settings.backgroundEnabled)
+            .putString(K_WEAR, settings.wearMode.name)
             .apply()
     }
 
@@ -47,5 +50,6 @@ class SharedPrefsSettingsStore(context: Context) : SettingsStore {
         const val K_SRC = "data_source"
         const val K_STALE = "stale_min"
         const val K_BG = "background_enabled"
+        const val K_WEAR = "wear_mode"
     }
 }

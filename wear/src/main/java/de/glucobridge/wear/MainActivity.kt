@@ -22,11 +22,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.remember
-import android.content.ComponentName
 import androidx.wear.tiles.TileService
-import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import de.glucobridge.wear.tile.GlucoseTileService
-import de.glucobridge.wear.complication.GlucoseComplicationService
+import de.glucobridge.wear.complication.requestComplicationUpdates
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
@@ -56,6 +54,14 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Kaltstart: sofort den gecachten Wert + 6h-Verlauf zeigen (nur neue Werte kommen per Push).
+        runCatching {
+            val cs = GlucoseStore(this)
+            if (cs.has()) {
+                val (mts, mvl) = GlucoseHistoryStore(this).load()
+                glucose = GlucoseData(cs.value, cs.trend, cs.ts, cs.low, cs.high, cs.unit, mts, mvl)
+            }
+        }
         setContent { WearApp(glucose) }
     }
 
@@ -69,6 +75,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             }
             buffer.release()
         }
+        // On-Demand: beim Oeffnen der App einen frischen Wert anfordern (no-op im Push-Modus).
+        WearRequester.requestIfOnDemand(this)
     }
 
     override fun onPause() {
@@ -85,16 +93,17 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     }
 
     private fun onData(m: DataMap) {
-        val g = parse(m)
-        glucose = g
+        val raw = parse(m)
+        // Verlauf in den 6h-Cache einmischen und daraus den anzuzeigenden Verlauf lesen.
+        val histStore = GlucoseHistoryStore(this)
+        runCatching { histStore.merge(raw.histTs, raw.histVal) }
+        val (mts, mvl) = runCatching { histStore.load() }.getOrDefault(raw.histTs to raw.histVal)
+        glucose = GlucoseData(raw.value, raw.trend, raw.ts, raw.targetLow, raw.targetHigh, raw.unit, mts, mvl)
         // Cache immer frisch halten (Tile/Complication lesen daraus) + Refresh anstossen.
-        runCatching { GlucoseStore(this).save(g.value, g.trend, g.ts, g.targetLow, g.targetHigh, g.unit) }
+        val mode = m.getString("mode") ?: "PUSH"
+        runCatching { GlucoseStore(this).save(raw.value, raw.trend, raw.ts, raw.targetLow, raw.targetHigh, raw.unit, mode) }
         runCatching { TileService.getUpdater(this).requestUpdate(GlucoseTileService::class.java) }
-        runCatching {
-            ComplicationDataSourceUpdateRequester
-                .create(this, ComponentName(this, GlucoseComplicationService::class.java))
-                .requestUpdateAll()
-        }
+        requestComplicationUpdates(this)
     }
 
     private fun parse(m: DataMap): GlucoseData = GlucoseData(

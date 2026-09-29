@@ -11,6 +11,12 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.graphics.drawable.IconCompat
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
 import de.glucobridge.app.GlucoBridgeApp
 import de.glucobridge.app.MainActivity
 import de.glucobridge.app.R
@@ -67,8 +73,11 @@ class GlucoseMonitorService : Service() {
     }
 
     private fun createChannel() {
-        val ch = NotificationChannel(CHANNEL_ID, "Glukose-Monitor", NotificationManager.IMPORTANCE_LOW)
+        val ch = NotificationChannel(CHANNEL_ID, "Glukose-Monitor", NotificationManager.IMPORTANCE_DEFAULT)
         ch.setShowBadge(false)
+        ch.setSound(null, null)      // lautlos, aber Icon bleibt in der Statusleiste sichtbar
+        ch.enableVibration(false)
+        ch.enableLights(false)
         getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
     }
 
@@ -80,7 +89,7 @@ class GlucoseMonitorService : Service() {
             val unit = settings.unit
             val zone = settings.target.zoneFor(reading.valueMgDl)
             title = "${formatGlucose(reading.valueMgDl, unit)} ${unitLabel(unit)} ${arrow(reading.trend)}"
-            text = "${zoneText(zone)} · ${age(reading.timestampEpochMillis)}"
+            text = "${age(reading.timestampEpochMillis)} · ${zoneText(zone)}"
             color = zoneColor(zone)
         } else {
             title = "GlucoBridge"
@@ -92,8 +101,7 @@ class GlucoseMonitorService : Service() {
             Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE
         )
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_glucose)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(text)
             .setOngoing(true)
@@ -101,7 +109,33 @@ class GlucoseMonitorService : Service() {
             .setColor(color)
             .setContentIntent(pi)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .build()
+        if (reading != null && settings != null) {
+            // Zahl direkt in die Statusleiste (dynamisches Icon), analog zu CGM-Apps.
+            builder.setSmallIcon(numberIcon(formatGlucose(reading.valueMgDl, settings.unit)))
+        } else {
+            builder.setSmallIcon(R.drawable.ic_stat_glucose)
+        }
+        return builder.build()
+    }
+
+    /** Erzeugt ein Statusleisten-Icon, das den Wert als Zahl zeigt (weiss, transparenter Grund). */
+    private fun numberIcon(text: String): IconCompat {
+        val size = 96
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.CENTER
+        }
+        paint.textSize = size.toFloat()
+        val target = size * 0.94f
+        val w = paint.measureText(text)
+        if (w > target) paint.textSize = size.toFloat() * (target / w)
+        val fm = paint.fontMetrics
+        val y = size / 2f - (fm.ascent + fm.descent) / 2f
+        canvas.drawText(text, size / 2f, y, paint)
+        return IconCompat.createWithBitmap(bmp)
     }
 
     private fun arrow(t: Trend): String = when (t) {
@@ -136,7 +170,7 @@ class GlucoseMonitorService : Service() {
     }
 
     companion object {
-        private const val CHANNEL_ID = "glucose_monitor"
+        private const val CHANNEL_ID = "glucose_monitor_v2"
         private const val NOTIF_ID = 1001
     }
 }

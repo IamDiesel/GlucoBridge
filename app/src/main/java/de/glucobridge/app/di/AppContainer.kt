@@ -33,8 +33,7 @@ class AppContainer(context: Context) {
     private val settingsStore = SharedPrefsSettingsStore(context.applicationContext)
 
     val glucoseRepository: GlucoseRepository = GlucoseRepositoryImpl(selector, sessionStore, historyStore, settingsStore)
-    @Suppress("unused")
-    private val wearSyncer = WearSyncer(context.applicationContext, glucoseRepository)
+    val wearSyncer = WearSyncer(context.applicationContext, glucoseRepository)
 
     // --- Export (Teil 2) ---
     val exportSettingsStore = ExportSettingsStore(context.applicationContext)

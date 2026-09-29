@@ -9,14 +9,19 @@ import kotlinx.coroutines.flow.StateFlow
 /** Bevorzugte Datenquelle (FR-P7): ALE als Default, REST als Rueckfallebene. */
 enum class DataSourceMode { ALE, REST, AUTO }
 
+/** Uebertragung Handy->Uhr: PUSH = jeder neue Wert wird gepusht (immer aktuell);
+ *  ON_DEMAND = die Uhr fragt nur beim Hinschauen an (Uhr-Akku sparen). */
+enum class WearMode { PUSH, ON_DEMAND }
+
 /** Nutzer-Einstellungen (FR-P1/P4/G4/G6). */
 data class Settings(
-    val pollIntervalMin: Int = 5,
+    val pollIntervalMin: Int = 3,
     val target: TargetRange = TargetRange(),
     val unit: GlucoseUnit = GlucoseUnit.MG_DL,
     val dataSource: DataSourceMode = DataSourceMode.ALE,
     val staleThresholdMin: Int = 10,
-    val backgroundEnabled: Boolean = false
+    val backgroundEnabled: Boolean = false,
+    val wearMode: WearMode = WearMode.PUSH
 )
 
 /** Erlaubte Polling-Stufen: 1..15 in 1er-, 15..60 in 5er-Schritten (FR-P1). */

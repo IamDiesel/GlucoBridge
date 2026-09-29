@@ -25,6 +25,8 @@ class GlucoseTileService : TileService() {
     override fun onTileRequest(
         requestParams: RequestBuilders.TileRequest
     ): ListenableFuture<TileBuilders.Tile> {
+        // On-Demand: beim Anzeigen des Tiles einen frischen Wert anfordern (no-op im Push-Modus).
+        de.glucobridge.wear.WearRequester.requestIfOnDemand(this)
         val store = GlucoseStore(this)
         val big: String
         val sub: String
@@ -78,7 +80,8 @@ class GlucoseTileService : TileService() {
 
         val tile = TileBuilders.Tile.Builder()
             .setResourcesVersion(RES_VERSION)
-            .setFreshnessIntervalMillis(60_000L)
+            // Kein periodisches Aufwecken: das Tile wird nur bei echtem Push aktualisiert (Akku).
+            .setFreshnessIntervalMillis(0L)
             .setTileTimeline(TimelineBuilders.Timeline.fromLayoutElement(root))
             .build()
         return immediate(tile)

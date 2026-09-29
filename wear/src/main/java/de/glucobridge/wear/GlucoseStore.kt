@@ -10,9 +10,10 @@ import de.glucobridge.core.model.Zone
 class GlucoseStore(context: Context) {
     private val p = context.applicationContext.getSharedPreferences("glucose_wear", Context.MODE_PRIVATE)
 
-    fun save(value: Int, trend: String, ts: Long, low: Int, high: Int, unit: String) {
+    fun save(value: Int, trend: String, ts: Long, low: Int, high: Int, unit: String, mode: String = "PUSH") {
         p.edit().putInt("value", value).putString("trend", trend).putLong("ts", ts)
-            .putInt("low", low).putInt("high", high).putString("unit", unit).apply()
+            .putInt("low", low).putInt("high", high).putString("unit", unit)
+            .putString("mode", mode).apply()
     }
 
     val value: Int get() = p.getInt("value", -1)
@@ -21,6 +22,7 @@ class GlucoseStore(context: Context) {
     val low: Int get() = p.getInt("low", 70)
     val high: Int get() = p.getInt("high", 180)
     val unit: String get() = p.getString("unit", "MG_DL") ?: "MG_DL"
+    val mode: String get() = p.getString("mode", "PUSH") ?: "PUSH"
 
     fun has(): Boolean = value >= 0
     fun zone(): Zone = TargetRange(low, high).zoneFor(value)

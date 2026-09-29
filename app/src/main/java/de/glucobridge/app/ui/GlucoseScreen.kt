@@ -168,7 +168,7 @@ private fun ValueView(s: GlucoseState.Content, settings: Settings, vm: GlucoseVi
             history = s.history,
             target = settings.target,
             unit = settings.unit,
-            modifier = Modifier.fillMaxWidth().height(230.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp).height(230.dp)
         )
 
         Spacer(Modifier.height(20.dp))
@@ -227,7 +227,6 @@ private fun GlucoseChart(
             modifier = Modifier.fillMaxWidth().weight(1f).pointerInput(pts) {
                 val slop = viewConfiguration.touchSlop
                 val longPressTimeout = viewConfiguration.longPressTimeoutMillis
-                val doubleTapTimeout = viewConfiguration.doubleTapTimeoutMillis
 
                 fun idxFromX(x: Float): Int {
                     if (contentWpx <= 0f) return 0
@@ -238,25 +237,26 @@ private fun GlucoseChart(
                 awaitEachGesture {
                     val down1 = awaitFirstDown(requireUnconsumed = false)
 
-                    // Klassifikation der ersten Beruehrung: UP / SECOND / MOVED / (Timeout=LongPress)
+                    // Erste Beruehrung klassifizieren: SECOND (2 Finger) / UP (Tipp) / DRAG (Wisch) / null (Halten)
+                    var horizontal = false
                     val outcome = withTimeoutOrNull(longPressTimeout) {
                         while (true) {
                             val e = awaitPointerEvent()
-                            val pressed = e.changes.filter { it.pressed }
-                            if (pressed.size >= 2) return@withTimeoutOrNull "SECOND"
+                            if (e.changes.count { it.pressed } >= 2) return@withTimeoutOrNull "SECOND"
                             val c = e.changes.firstOrNull { it.id == down1.id }
                             if (c != null && !c.pressed) return@withTimeoutOrNull "UP"
-                            if (c != null &&
-                                (abs(c.position.x - down1.position.x) > slop ||
-                                    abs(c.position.y - down1.position.y) > slop)
-                            ) return@withTimeoutOrNull "MOVED"
+                            if (c != null) {
+                                val dx = abs(c.position.x - down1.position.x)
+                                val dy = abs(c.position.y - down1.position.y)
+                                if (dx > slop || dy > slop) { horizontal = dx >= dy; return@withTimeoutOrNull "DRAG" }
+                            }
                         }
                         @Suppress("UNREACHABLE_CODE") "UP"
                     }
 
                     when (outcome) {
                         null -> {
-                            // LONG-PRESS -> Crosshair scrubben (ziehen bewegt den Cursor)
+                            // Halten -> Cursor an der Stelle, Ziehen scrubbt ihn
                             cursorIndex = idxFromX(down1.position.x)
                             while (true) {
                                 val e = awaitPointerEvent()
@@ -274,8 +274,34 @@ private fun GlucoseChart(
                                 }
                             }
                         }
-                        "SECOND" -> {
-                            // Zwei Finger -> Zoom + Pan
+                        "UP" -> {
+                            // Tipp -> Cursor direkt an der getippten Stelle
+                            cursorIndex = idxFromX(down1.position.x)
+                        }
+                        "DRAG" -> if (horizontal) {
+                            // Horizontaler Wisch -> Graph verschieben
+                            var lastX = down1.position.x
+                            while (true) {
+                                val e = awaitPointerEvent()
+                                val pressed = e.changes.filter { it.pressed }
+                                if (pressed.isEmpty()) break
+                                if (pressed.size >= 2) {
+                                    val zoom = e.calculateZoom()
+                                    if (zoom != 1f) scale = (scale * zoom).coerceIn(1f, 10f)
+                                    offsetX = (offsetX + e.calculatePan().x).coerceIn(minOffsetPx, 0f)
+                                    e.changes.forEach { it.consume() }
+                                    lastX = pressed.first().position.x
+                                } else {
+                                    val c = pressed.first()
+                                    offsetX = (offsetX + (c.position.x - lastX)).coerceIn(minOffsetPx, 0f)
+                                    c.consume()
+                                    lastX = c.position.x
+                                }
+                            }
+                        }
+                        // vertikaler Wisch: nicht konsumieren -> Seiten-Scroll greift
+                        else -> {
+                            // "SECOND" -> Zoom + Pan mit zwei Fingern
                             while (true) {
                                 val e = awaitPointerEvent()
                                 val pressed = e.changes.filter { it.pressed }
@@ -290,40 +316,6 @@ private fun GlucoseChart(
                                 }
                             }
                         }
-                        "MOVED" -> {
-                            // Undefinierte Einzel-Wisch-Geste -> ignorieren (Seiten-Scroll darf greifen)
-                        }
-                        else -> {
-                            // "UP": evtl. Doppeltipp-und-halten, sonst Einzeltipp
-                            val second = withTimeoutOrNull(doubleTapTimeout) {
-                                awaitFirstDown(requireUnconsumed = false)
-                            }
-                            if (second == null) {
-                                // Einzeltipp -> Crosshair setzen/umschalten
-                                val idx = idxFromX(down1.position.x)
-                                cursorIndex = if (cursorIndex == idx) null else idx
-                            } else {
-                                // Doppeltipp-und-halten -> horizontal verschieben (nur X)
-                                var lastX = second.position.x
-                                while (true) {
-                                    val e = awaitPointerEvent()
-                                    val pressed = e.changes.filter { it.pressed }
-                                    if (pressed.isEmpty()) break
-                                    if (pressed.size >= 2) {
-                                        val zoom = e.calculateZoom()
-                                        if (zoom != 1f) scale = (scale * zoom).coerceIn(1f, 10f)
-                                        offsetX = (offsetX + e.calculatePan().x).coerceIn(minOffsetPx, 0f)
-                                        e.changes.forEach { it.consume() }
-                                        lastX = pressed.first().position.x
-                                    } else {
-                                        val c = pressed.first()
-                                        offsetX = (offsetX + (c.position.x - lastX)).coerceIn(minOffsetPx, 0f)
-                                        c.consume()
-                                        lastX = c.position.x
-                                    }
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -331,7 +323,7 @@ private fun GlucoseChart(
             val w = size.width
             val h = size.height
             val mLeft = 46f
-            val mRight = 10f
+            val mRight = 18f
             val mTop = 10f
             val mBottom = 26f
             val plotLeft = mLeft
@@ -471,7 +463,7 @@ private fun GlucoseChart(
                 scale = 1f; offsetX = 0f; cursorIndex = null
             }) { Text("Reset") }
             Text(
-                "${"%.1f".format(scale)}× · halten = Cursor · Doppeltipp+halten = verschieben",
+                "${"%.1f".format(scale)}× · Tippen/Halten = Cursor · Wischen = verschieben · 2 Finger = Zoom",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

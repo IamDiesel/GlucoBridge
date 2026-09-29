@@ -1,0 +1,64 @@
+package de.glucobridge.wear.complication
+
+import android.content.Context
+import android.hardware.display.DisplayManager
+import android.os.PowerManager
+import android.util.Log
+import android.view.Display
+import androidx.wear.watchface.complications.data.ComplicationData
+import androidx.wear.watchface.complications.data.ComplicationType
+import androidx.wear.watchface.complications.data.PlainComplicationText
+import androidx.wear.watchface.complications.data.ShortTextComplicationData
+import androidx.wear.watchface.complications.datasource.ComplicationRequest
+import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+/**
+ * DEBUG-Messsonde (nicht fuer den Alltag): Wann ruft das System eine Complication mit
+ * Update-Periode (60 s) auf – laufend, verzoegert bei Display aus, oder nachgeholt beim Aufwachen?
+ * Anzeige: text = Uhrzeit des letzten Aufrufs, title = Zaehler. Log-Tag: GB-PROBE.
+ */
+class ProbeComplicationService : SuspendingComplicationDataSourceService() {
+
+    override fun getPreviewData(type: ComplicationType): ComplicationData? =
+        if (type == ComplicationType.SHORT_TEXT) data("--:--", "#0") else null
+
+    override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData {
+        val p = getSharedPreferences("gb_probe", Context.MODE_PRIVATE)
+        val n = p.getInt("n", 0) + 1
+        val now = System.currentTimeMillis()
+        val last = p.getLong("last", 0L)
+        p.edit().putInt("n", n).putLong("last", now).apply()
+
+        val interactive = (getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive
+        val state = (getSystemService(Context.DISPLAY_SERVICE) as DisplayManager)
+            .getDisplay(Display.DEFAULT_DISPLAY)?.state ?: -1
+        val stateName = when (state) {
+            Display.STATE_ON -> "ON"
+            Display.STATE_DOZE -> "DOZE"
+            Display.STATE_DOZE_SUSPEND -> "DOZE_SUSPEND"
+            Display.STATE_OFF -> "OFF"
+            else -> "S$state"
+        }
+        val gap = if (last > 0L) (now - last) / 1000 else -1
+        Log.i(
+            TAG,
+            "req#$n t=${fmt(now, "HH:mm:ss")} gap=${gap}s display=$stateName interactive=$interactive " +
+                "id=${request.complicationInstanceId}"
+        )
+        return data(fmt(now, "HH:mm"), "#$n")
+    }
+
+    private fun data(text: String, title: String): ShortTextComplicationData =
+        ShortTextComplicationData.Builder(
+            text = PlainComplicationText.Builder(text).build(),
+            contentDescription = PlainComplicationText.Builder("Probe").build()
+        ).setTitle(PlainComplicationText.Builder(title).build()).build()
+
+    private fun fmt(ts: Long, pattern: String): String =
+        SimpleDateFormat(pattern, Locale.getDefault()).format(Date(ts))
+
+    private companion object { const val TAG = "GB-PROBE" }
+}
